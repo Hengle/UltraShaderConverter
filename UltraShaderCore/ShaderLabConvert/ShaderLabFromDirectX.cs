@@ -637,17 +637,20 @@ namespace ShaderLabConvert
                     }
                     case Opcode.sqrt:
                     {
-                        // ????? not two args?
                         OperandInfo op0 = GetOperandDisplay(shaderData, dxShader, inst.operands[0], isVertex);
+                        OperandInfo op1 = GetOperandDisplay(shaderData, dxShader, inst.operands[1], isVertex);
                         string op0Str = op0.GetDisplayString();
-                        AddLine(sb, depth, $"{op0Str} = {prefix}sqrt({op0Str}){suffix};");
+                        string op1Str = op1.GetDisplayString();
+                        AddLine(sb, depth, $"{op0Str} = {prefix}sqrt({op1Str}){suffix};");
                         break;
                     }
                     case Opcode.rsq:
                     {
                         OperandInfo op0 = GetOperandDisplay(shaderData, dxShader, inst.operands[0], isVertex);
+                        OperandInfo op1 = GetOperandDisplay(shaderData, dxShader, inst.operands[1], isVertex);
                         string op0Str = op0.GetDisplayString();
-                        AddLine(sb, depth, $"{op0Str} = {prefix}rsqrt({op0Str}){suffix};");
+                        string op1Str = op1.GetDisplayString();
+                        AddLine(sb, depth, $"{op0Str} = {prefix}rsqrt({op1Str}){suffix};");
                         break;
                     }
                     case Opcode.mov:
