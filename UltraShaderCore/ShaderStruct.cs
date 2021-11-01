@@ -9,17 +9,12 @@ namespace UltraShaderCore
 {
     public class ShaderStruct
     {
-        private AssetsFile assetsFile;
-
         public List<ShaderTableEntry> entries;
         public List<ShaderData> datas;
         public List<long> poses;
-        //anything past here doesn't really matter
-        //because it's all in the asset data anyway
-        //TODO: not true anymore, these fields are empty in U2021+
+
         public ShaderStruct(AssetsFile assetsFile, AssetsFileReader reader)
         {
-            this.assetsFile = assetsFile;
             int[] version = VersionUtils.GetVersionArray(assetsFile);
 
             reader.bigEndian = false;
@@ -35,7 +30,7 @@ namespace UltraShaderCore
             for (int i = 0; i < entriesCount; i++)
             {
                 poses.Add(entries[i].start);
-                datas.Add(new ShaderData(assetsFile, reader, entries[i]));
+                datas.Add(new ShaderData(reader, entries[i]));
             }
         }
     }
@@ -80,10 +75,8 @@ namespace UltraShaderCore
         public byte[] unknownZeros;
         public byte[] shaderBytes;
         public ShaderMeta shaderMeta;
-        public ShaderData(AssetsFile assetsFile, AssetsFileReader reader, ShaderTableEntry entry)
+        public ShaderData(AssetsFileReader reader, ShaderTableEntry entry)
         {
-            int[] version = VersionUtils.GetVersionArray(assetsFile);
-
             reader.Position = entry.start;
             date = reader.ReadInt32();
             type = (ShaderType)reader.ReadInt32();
@@ -121,8 +114,10 @@ namespace UltraShaderCore
             byte unkcnt5 = reader.ReadByte();
             byte unkcnt6 = reader.ReadByte();
 
-            //TODO FIGURE OUT VERSION
-            if (version[0] >= 2021)
+            // TODO, figure out what causes this to be 0
+            uint testZero = reader.ReadUInt32();
+            reader.Position -= 4;
+            if (testZero == 0)
                 unknownZeros = reader.ReadBytes(0x20);
 
             long dxbcShaderStart = reader.Position;
@@ -182,6 +177,7 @@ namespace UltraShaderCore
         public string name;
         public int byteSize;
         public List<ShaderConstantBufferParam> cbParams;
+        public List<ShaderStructParam> stParams;
         public ShaderConstantBuffer(AssetsFileReader reader)
         {
             name = reader.ReadCountStringInt32();
@@ -189,22 +185,26 @@ namespace UltraShaderCore
 
             byteSize = reader.ReadInt32();
 
-            int paramCount = reader.ReadInt32();
-            cbParams = new List<ShaderConstantBufferParam>(paramCount);
-            for (int i = 0; i < paramCount; i++)
+            int constantBufferParamCount = reader.ReadInt32();
+            cbParams = new List<ShaderConstantBufferParam>(constantBufferParamCount);
+            for (int i = 0; i < constantBufferParamCount; i++)
             {
                 cbParams.Add(new ShaderConstantBufferParam(reader));
             }
 
-            //todo, not supported yet!!!!! (I haven't seen this be anything other than 0)
             int structParamCount = reader.ReadInt32();
+            stParams = new List<ShaderStructParam>(structParamCount);
+            for (int i = 0; i < structParamCount; i++)
+            {
+                stParams.Add(new ShaderStructParam(reader));
+            }
         }
     }
 
     public class ShaderConstantBufferParam
     {
         public string name;
-        public int paramType; //always 0
+        public ShaderParamType paramType; //always 0
         public int rowCount; //4 for matrix4x4, 1 for everything else
         public int columnCount; //entry size, ex. 2 for float2, 4 for float4 and matrix4x4
         public int isMatrix; //1 for matrix4x4/3x3, 0 for everything else
@@ -214,12 +214,34 @@ namespace UltraShaderCore
         {
             name = reader.ReadCountStringInt32();
             reader.Align();
-            paramType = reader.ReadInt32();
+            paramType = (ShaderParamType)reader.ReadInt32();
             rowCount = reader.ReadInt32();
             columnCount = reader.ReadInt32();
             isMatrix = reader.ReadInt32();
             vectorSize = reader.ReadInt32();
             pos = reader.ReadInt32();
+        }
+    }
+
+    public class ShaderStructParam
+    {
+        public string name;
+        public int index;
+        public int arraySize;
+        public int structSize;
+        public List<ShaderConstantBufferParam> structParams;
+        public ShaderStructParam(AssetsFileReader reader)
+        {
+            name = reader.ReadCountStringInt32();
+            index = reader.ReadInt32();
+            arraySize = reader.ReadInt32();
+            structSize = reader.ReadInt32();
+            int paramCount = reader.ReadInt32();
+            structParams = new List<ShaderConstantBufferParam>(paramCount);
+            for (int i = 0; i < paramCount; i++)
+            {
+                structParams.Add(new ShaderConstantBufferParam(reader));
+            }
         }
     }
 

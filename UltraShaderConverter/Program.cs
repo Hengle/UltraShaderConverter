@@ -1,10 +1,13 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using AssetsTools.NET.Extra.Decompressors.LZ4;
 using DirectXDisassembler;
+using DotNetDxc;
 using ShaderLabConvert;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using UltraShaderCore;
 
 namespace UltraShaderConverter
@@ -49,14 +52,16 @@ namespace UltraShaderConverter
             {
                 foreach (AssetFileInfoEx shaderInf in fileInst.table.GetAssetsOfType(48))
                 {
-                    AssetTypeValueField baseField = am.GetTypeInstance(fileInst.file, shaderInf).GetBaseField();
-                    string name = baseField.Get("m_ParsedForm").Get("m_Name").GetValue().AsString();
+                    //AssetTypeValueField baseField = am.GetTypeInstance(fileInst.file, shaderInf).GetBaseField();
+                    AssetTypeValueField shaderBf = ShaderFixer.GetByteArrayShader(am, fileInst, shaderInf);
+
+                    string name = shaderBf.Get("m_ParsedForm").Get("m_Name").GetValue().AsString();
                     long pathId = shaderInf.index;
 
                     Console.WriteLine($"{name} ({pathId})");
                 }
             }
-            else if (mode == "shv" || mode == "dis" || mode == "dec")
+            else if (mode == "shv" || mode == "dis" || mode == "dec" || mode == "devxdec")
             {
                 if (!long.TryParse(args[2], out long pathId))
                 {

@@ -453,4 +453,11 @@ namespace DirectXDisassembler
         @int,
         @float
     }
+    public enum ExtendedOpcodeType
+    {
+        Empty,
+        SampleControls,
+        ResourceDim,
+        ResourceReturnType
+    }
 }

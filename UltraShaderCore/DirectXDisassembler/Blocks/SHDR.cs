@@ -40,14 +40,20 @@ namespace DirectXDisassembler.Blocks
     {
         public int instData;
         public int length;
-        public bool operatorExtended;
-        public Opcode opcode;
-        public bool saturated;
-        public int opcodeExtraData;
         public bool operandExtended;
+        public Opcode opcode;
+
+        public bool saturated;
+
+        public int addrOffsetIU, addrOffsetIV, addrOffsetIW;
+        public int typeX, typeY, typeZ, typeW;
+        public ResourceDimension resDim;
+
+        public int opcodeExtraData;
         public int operandIndex;
         public int operandType;
         public int operandComponents;
+
         public SHDRDeclData declData;
         public List<SHDRInstructionOperand> operands;
         public SHDR shader;
@@ -57,9 +63,43 @@ namespace DirectXDisassembler.Blocks
             long startPos = reader.BaseStream.Position;
             instData = reader.ReadInt32();
             length = (instData & 0x7f000000) >> 24;
-            operandExtended = (instData & 0x80000000) >> 31 == 1 ? true : false;
+            operandExtended = (instData & 0x80000000) >> 31 == 1;
             opcode = (Opcode)(instData & 0x00007ff);
+
             saturated = (instData & 0x00002000) != 0;
+
+            bool extended = operandExtended;
+            while (extended)
+            {
+                int extOpcodeToken = reader.ReadInt32();
+                ExtendedOpcodeType extOpcodeType = (ExtendedOpcodeType)(extOpcodeToken & 0x0000003f);
+                extended = (extOpcodeToken & 0x80000000) >> 31 == 1;
+
+                switch (extOpcodeType)
+                {
+                    case ExtendedOpcodeType.SampleControls:
+                    {
+                        addrOffsetIU = (extOpcodeToken & 0x1e00) >> 9;
+                        addrOffsetIV = (extOpcodeToken & 0x1e000) >> 13;
+                        addrOffsetIW = (extOpcodeToken & 0x1e0000) >> 17;
+                        break;
+                    }
+                    case ExtendedOpcodeType.ResourceReturnType:
+                    {
+                        typeX = (extOpcodeToken & 0x3c0) >> 6;
+                        typeY = (extOpcodeToken & 0x3c00) >> 10;
+                        typeZ = (extOpcodeToken & 0x3c000) >> 14;
+                        typeW = (extOpcodeToken & 0x3c0000) >> 18;
+                        break;
+                    }
+                    case ExtendedOpcodeType.ResourceDim:
+                    {
+                        resDim = (ResourceDimension)((extOpcodeToken & 0x000007C0) >> 6);
+                        break;
+                    }
+                }
+            }
+
             opcodeExtraData = (instData & 0xfff800) >> 11;
             operands = new List<SHDRInstructionOperand>();
             for (int i = 0; i < GetOperandCount(opcode); i++)

@@ -129,6 +129,44 @@ namespace DirectXDisassembler
                     sb.AppendLine($"//   {paramType} {paramName} at {paramPos}");
                 }
 
+                for (int j = 0; j < constantBuffer.stParams.Count; j++)
+                {
+                    ShaderStructParam structParam = constantBuffer.stParams[j];
+                    string structParamName = structParam.name;
+
+                    sb.AppendLine($"//   struct {structParamName} {{");
+
+                    for (int k = 0; k < structParam.structParams.Count; k++)
+                    {
+                        ShaderConstantBufferParam param = structParam.structParams[k];
+                        string paramName = param.name;
+                        int paramPos = param.pos;
+
+                        string paramType = "Unknown";
+
+                        if (param.rowCount == 1)
+                        {
+                            if (param.columnCount == 1)
+                                paramType = "Float";
+                            if (param.columnCount == 2)
+                                paramType = "Vector2";
+                            if (param.columnCount == 3)
+                                paramType = "Vector3";
+                            if (param.columnCount == 4)
+                                paramType = "Vector4";
+                        }
+                        else if (param.rowCount == 4)
+                        {
+                            if (param.columnCount == 4 && param.isMatrix == 1)
+                                paramType = "Matrix4x4";
+                        }
+
+                        sb.AppendLine($"//     {paramType} {paramName} at {paramPos}");
+                    }
+
+                    sb.AppendLine($"//   }}");
+                }
+
                 sb.AppendLine("// }");
             }
 

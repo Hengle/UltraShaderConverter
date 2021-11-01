@@ -39,6 +39,9 @@ namespace UltraShaderCore
         {
             byte[] shaderSPData = shaderData.shaderBytes;
             byte[] shaderSPDataClipped;
+
+            File.WriteAllBytes("f.dat", shaderSPData);
+
             using (MemoryStream ms = new MemoryStream(shaderSPData))
             using (BinaryReader r = new BinaryReader(ms))
             {
