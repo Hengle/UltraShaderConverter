@@ -77,11 +77,11 @@ namespace UltraShaderCore
                     AssetTypeValueField progHull = pass.Get("progHull").Get("m_SubPrograms").Get("Array");
                     AssetTypeValueField progDomain = pass.Get("progDomain").Get("m_SubPrograms").Get("Array");
 
-                    variations.AddRange(GetPassShaderVariations(platform, progVertex, m_NameIndicesReversed));
-                    variations.AddRange(GetPassShaderVariations(platform, progFragment, m_NameIndicesReversed));
-                    variations.AddRange(GetPassShaderVariations(platform, progGeometry, m_NameIndicesReversed));
-                    variations.AddRange(GetPassShaderVariations(platform, progHull, m_NameIndicesReversed));
-                    variations.AddRange(GetPassShaderVariations(platform, progDomain, m_NameIndicesReversed));
+                    variations.AddRange(GetPassShaderVariations(platform, progVertex, j, m_NameIndicesReversed));
+                    variations.AddRange(GetPassShaderVariations(platform, progFragment, j, m_NameIndicesReversed));
+                    variations.AddRange(GetPassShaderVariations(platform, progGeometry, j, m_NameIndicesReversed));
+                    variations.AddRange(GetPassShaderVariations(platform, progHull, j, m_NameIndicesReversed));
+                    variations.AddRange(GetPassShaderVariations(platform, progDomain, j, m_NameIndicesReversed));
                 }
             }
 
@@ -118,7 +118,7 @@ namespace UltraShaderCore
             }
         }
 
-        private List<ShaderVariation> GetPassShaderVariations(ShaderPlatform platform, AssetTypeValueField subPrograms, Dictionary<int, string> namesReversed)
+        private List<ShaderVariation> GetPassShaderVariations(ShaderPlatform platform, AssetTypeValueField subPrograms, int passIdx, Dictionary<int, string> namesReversed)
         {
             int[] version = VersionUtils.GetVersionArray(assetsFile);
 
@@ -163,7 +163,7 @@ namespace UltraShaderCore
                     }
                 }
 
-                ShaderVariation shaderVariation = new ShaderVariation(subProgram, platform, shaderType, keywords, namesReversed);
+                ShaderVariation shaderVariation = new ShaderVariation(subProgram, passIdx, platform, shaderType, keywords, namesReversed);
                 variations.Add(shaderVariation);
             }
 

@@ -77,20 +77,23 @@ namespace ShaderLabConvert
 
                         AddLine(sb, depth, "");
 
-                        AssetTypeValueField m_Passes = subShader.Get("m_Passes").Get("Array");
-                        int passCount = m_Passes.GetValue().AsArray().size;
-                        for (int j = 0; j < passCount; j++)
+                        AddLine(sb, depth, "Pass");
+                        AddLine(sb, depth, "{");
+                        depth++;
                         {
-                            AddLine(sb, depth, "Pass");
-                            AddLine(sb, depth, "{");
-                            depth++;
+                            AssetTypeValueField m_Passes = subShader.Get("m_Passes").Get("Array");
+                            //hope they are the same pass cuz I'm not checking
+                            AssetTypeValueField m_Pass = m_Passes[vertShaderVar.passIdx];
+                            AssetTypeValueField m_TagsPass = m_Pass.Get("m_State").Get("m_Tags").Get("tags").Get("Array");
+                            if (m_TagsPass.GetValue().AsArray().size > 0)
                             {
-                                AssetTypeValueField pass = m_Passes[j];
-                                sb.AppendLine(GetShaderPassString(depth));
+                                AddLine(sb, depth, GetShaderTagString(m_TagsPass));
                             }
-                            depth--;
-                            AddLine(sb, depth, "}");
+
+                            sb.AppendLine(GetShaderPassString(depth));
                         }
+                        depth--;
+                        AddLine(sb, depth, "}");
                     }
                     depth--;
                     AddLine(sb, depth, "}");

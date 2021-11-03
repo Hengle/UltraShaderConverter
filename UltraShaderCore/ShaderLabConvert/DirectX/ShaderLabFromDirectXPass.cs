@@ -46,6 +46,7 @@ namespace ShaderLabConvert
                 { Opcode.mov,      new InstHandler(HandleMov)     },
                 { Opcode.movc,     new InstHandler(HandleMovc)    },
                 { Opcode.add,      new InstHandler(HandleAdd)     },
+                { Opcode.iadd,     new InstHandler(HandleAdd)     },
                 { Opcode.mul,      new InstHandler(HandleMul)     },
                 { Opcode.div,      new InstHandler(HandleDiv)     },
                 { Opcode.mad,      new InstHandler(HandleMad)     },
@@ -56,6 +57,8 @@ namespace ShaderLabConvert
                 { Opcode.rsq,      new InstHandler(HandleRsq)     },
                 { Opcode.log,      new InstHandler(HandleLog)     },
                 { Opcode.exp,      new InstHandler(HandleExp)     },
+                { Opcode.ishl,     new InstHandler(HandleIShl)    },
+                { Opcode.ishr,     new InstHandler(HandleIShr)    },
                 { Opcode.dp2,      new InstHandler(HandleDp2)     },
                 { Opcode.dp3,      new InstHandler(HandleDp3)     },
                 { Opcode.dp4,      new InstHandler(HandleDp4)     },
@@ -261,6 +264,30 @@ namespace ShaderLabConvert
             AddLine(sb, $"{op0d} = {operation};");
         }
 
+        private void HandleIShl(SHDRInstruction inst)
+        {
+            SHDRInstructionOperand op0 = inst.operands[0];
+            SHDRInstructionOperand op1 = inst.operands[1];
+            SHDRInstructionOperand op2 = inst.operands[2];
+            string op0d = GetOperandDisplayString(op0, out _, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string operation = $"{op1d} << {op2d}";
+            AddLine(sb, $"{op0d} = {operation};");
+        }
+
+        private void HandleIShr(SHDRInstruction inst)
+        {
+            SHDRInstructionOperand op0 = inst.operands[0];
+            SHDRInstructionOperand op1 = inst.operands[1];
+            SHDRInstructionOperand op2 = inst.operands[2];
+            string op0d = GetOperandDisplayString(op0, out _, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string operation = $"{op1d} >> {op2d}";
+            AddLine(sb, $"{op0d} = {operation};");
+        }
+
         private void HandleDp2(SHDRInstruction inst)
         {
             SHDRInstructionOperand op0 = inst.operands[0];
@@ -305,15 +332,16 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
+            int[] uvMask = new int[] { 0, 1 };
             string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, out string op1b, out _);
+            string op1d = GetOperandDisplayString(op1, uvMask, out string op1b, out _);
             string op2d = GetOperandDisplayString(op2, out string op2b, out _);
 
             string operation;
             if (op2b == "unity_ProbeVolumeSH")
                 operation = $"UNITY_SAMPLE_TEX3D_SAMPLER({op2b}, {op2b}, {op1b})";
             else
-                operation = $"tex2D({op2b}, {op1b})";
+                operation = $"tex2D({op2b}, {op1d})";
 
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -518,7 +546,6 @@ namespace ShaderLabConvert
                         foreach (ShaderConstantBufferParam param in cbParams)
                         {
                             string paramName = param.name;
-                            // TO FIX, offset wrong
                             int[] matchedMask = MatchMaskToConstantBuffer(croppedMask, param.pos, param.rowCount);
                             string maskStr = MaskToString(matchedMask);
                             paramStrs.Add($"{paramName}.{maskStr}");
