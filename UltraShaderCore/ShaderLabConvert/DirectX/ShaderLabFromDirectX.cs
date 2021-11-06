@@ -248,7 +248,11 @@ namespace ShaderLabConvert
 
             AddLine(sb, depth, "");
 
+            // Sometimes the same thing can show up in .constantBuffers and .slots
+            HashSet<string> declaredBuffs = new HashSet<string>();
+
             // $Globals ConstantBuffer
+            AddLine(sb, depth, "// $Globals ConstantBuffers for Vertex Shader");
             ShaderConstantBuffer vertGlobalsCb = vertData.shaderMeta.constantBuffers.FirstOrDefault(b => b.name == "$Globals");
             if (vertGlobalsCb != null)
             {
@@ -257,12 +261,17 @@ namespace ShaderLabConvert
                     string typeName = GetConstantBufferParamType(param);
                     string name = param.name;
 
-                    AddLine(sb, depth, $"{typeName} {name};");
+                    if (!declaredBuffs.Contains(name))
+                    {
+                        AddLine(sb, depth, $"{typeName} {name};");
+                        declaredBuffs.Add(name);
+                    }
                 }
 
                 AddLine(sb, depth, "");
             }
 
+            AddLine(sb, depth, "// $Globals ConstantBuffers for Fragment Shader");
             ShaderConstantBuffer fragGlobalsCb = fragData.shaderMeta.constantBuffers.FirstOrDefault(b => b.name == "$Globals");
             if (fragGlobalsCb != null)
             {
@@ -271,37 +280,81 @@ namespace ShaderLabConvert
                     string typeName = GetConstantBufferParamType(param);
                     string name = param.name;
 
-                    AddLine(sb, depth, $"{typeName} {name};");
+                    if (!declaredBuffs.Contains(name))
+                    {
+                        AddLine(sb, depth, $"{typeName} {name};");
+                        declaredBuffs.Add(name);
+                    }
                 }
 
                 AddLine(sb, depth, "");
             }
 
             // Global slots
+            AddLine(sb, depth, "// Slots for Vertex Shader");
             bool wasGlobalSlot = false;
             foreach (ShaderSlot slot in vertData.shaderMeta.slots)
             {
                 if (slot.type == 0)
                 {
-                    if (slot.args[1] == 4 || slot.args[1] == 5)
+                    string name = slot.name;
+                    if (!declaredBuffs.Contains(name))
                     {
-                        AddLine(sb, depth, $"sampler2D {slot.name};");
-                        wasGlobalSlot = true;
+                        if (slot.args[1] == 4 || slot.args[1] == 5)
+                        {
+                            AddLine(sb, depth, $"sampler2D {slot.name};");
+                            wasGlobalSlot = true;
+                        }
+                        else if (slot.args[1] == 6 || slot.args[1] == 7)
+                        {
+                            AddLine(sb, depth, $"sampler3D {slot.name};");
+                            wasGlobalSlot = true;
+                        }
+                        else if (slot.args[1] == 8 || slot.args[1] == 9)
+                        {
+                            AddLine(sb, depth, $"samplerCUBE {slot.name};");
+                            wasGlobalSlot = true;
+                        }
+                        else
+                        {
+                            AddLine(sb, depth, $"sampler2D {slot.name}; //Unsure of real type ({slot.args[1]})");
+                            wasGlobalSlot = true;
+                        }
+                        declaredBuffs.Add(name);
                     }
-                    //idk for 6 and 8
                 }
             }
 
+            AddLine(sb, depth, "// Slots for Fragment Shader");
             foreach (ShaderSlot slot in fragData.shaderMeta.slots)
             {
                 if (slot.type == 0)
                 {
-                    if (slot.args[1] == 4 || slot.args[1] == 5)
+                    string name = slot.name;
+                    if (!declaredBuffs.Contains(name))
                     {
-                        AddLine(sb, depth, $"sampler2D {slot.name};");
-                        wasGlobalSlot = true;
+                        if (slot.args[1] == 4 || slot.args[1] == 5)
+                        {
+                            AddLine(sb, depth, $"sampler2D {slot.name};");
+                            wasGlobalSlot = true;
+                        }
+                        else if (slot.args[1] == 6 || slot.args[1] == 7)
+                        {
+                            AddLine(sb, depth, $"sampler3D {slot.name};");
+                            wasGlobalSlot = true;
+                        }
+                        else if (slot.args[1] == 8 || slot.args[1] == 9)
+                        {
+                            AddLine(sb, depth, $"samplerCUBE {slot.name};");
+                            wasGlobalSlot = true;
+                        }
+                        else
+                        {
+                            AddLine(sb, depth, $"sampler2D {slot.name}; //Unsure of real type ({slot.args[1]})");
+                            wasGlobalSlot = true;
+                        }
+                        declaredBuffs.Add(name);
                     }
-                    //idk for 6 and 8
                 }
             }
 
@@ -423,9 +476,7 @@ namespace ShaderLabConvert
             }
             return name;
         }
-
-        // Decompiler stuff
-
+        
         private string FlipMatrices(ShaderData shaderData, CompiledShader dxShader, bool isVertex, int depth)
         {
             StringBuilder sb = new StringBuilder();

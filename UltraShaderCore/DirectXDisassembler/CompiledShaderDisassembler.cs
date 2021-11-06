@@ -413,7 +413,10 @@ namespace DirectXDisassembler
                 case Operand.Input:
                     return $"{prefix}v{op.arraySizes[0]}";
                 case Operand.Output:
-                    return $"{prefix}o{op.arraySizes[0]}";
+                    if (op.arraySizes.Length == 0) //why does this happen???
+                        return $"{prefix}o";
+                    else
+                        return $"{prefix}o{op.arraySizes[0]}";
                 case Operand.Immediate32:
                 {
                     if (op.immValues.Length == 1)

@@ -57,6 +57,8 @@ namespace ShaderLabConvert
                 { Opcode.rsq,      new InstHandler(HandleRsq)     },
                 { Opcode.log,      new InstHandler(HandleLog)     },
                 { Opcode.exp,      new InstHandler(HandleExp)     },
+                { Opcode.rcp,      new InstHandler(HandleRcp)     },
+                { Opcode.frc,      new InstHandler(HandleFrc)     },
                 { Opcode.ishl,     new InstHandler(HandleIShl)    },
                 { Opcode.ishr,     new InstHandler(HandleIShr)    },
                 { Opcode.dp2,      new InstHandler(HandleDp2)     },
@@ -64,6 +66,7 @@ namespace ShaderLabConvert
                 { Opcode.dp4,      new InstHandler(HandleDp4)     },
                 { Opcode.sample,   new InstHandler(HandleSample)  },
                 { Opcode.sample_l, new InstHandler(HandleSampleL) },
+                { Opcode.discard,  new InstHandler(HandleDiscard) },
                 { Opcode.@if,      new InstHandler(HandleIf)      },
                 { Opcode.@else,    new InstHandler(HandleElse)    },
                 { Opcode.endif,    new InstHandler(HandleEndIf)   },
@@ -114,10 +117,15 @@ namespace ShaderLabConvert
         {
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string operation = WrapSaturated(inst, $"{op1d}");
-            AddLine(sb, $"{op0d} = {operation};");
+            List<string> op0ds = GetOperandDisplayStrings(op0, out List<BodyMaskPair> op0bms);
+            for (int i = 0; i < op0bms.Count; i++)
+            {
+                string op0d = op0ds[i];
+                BodyMaskPair op0bm = op0bms[i];
+                string op1d = GetOperandDisplayString(op1, op0bm.realMask, out _);
+                string operation = WrapSaturated(inst, $"{op1d}");
+                AddLine(sb, $"{op0d} = {operation};");
+            }
         }
 
         private void HandleMovc(SHDRInstruction inst)
@@ -126,10 +134,10 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
             SHDRInstructionOperand op3 = inst.operands[3];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
-            string op3d = GetOperandDisplayString(op3, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
+            string op3d = GetOperandDisplayString(op3, op0.swizzle, out _);
             string operation = WrapSaturated(inst, $"{op1d} ? {op2d} : {op3d}");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -139,9 +147,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = WrapSaturated(inst, $"{op1d} + {op2d}");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -151,9 +159,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = WrapSaturated(inst, $"{op1d} * {op2d}");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -163,9 +171,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = WrapSaturated(inst, $"{op1d} / {op2d}");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -176,10 +184,10 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
             SHDRInstructionOperand op3 = inst.operands[3];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
-            string op3d = GetOperandDisplayString(op3, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
+            string op3d = GetOperandDisplayString(op3, op0.swizzle, out _);
             string operation = WrapSaturated(inst, $"{op1d} * {op2d} + {op3d}");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -190,9 +198,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             if (op2d != "1")
             {
                 string operation = WrapSaturated(inst, $"uint({op1d}) & uint({op2d})");
@@ -205,9 +213,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"min({op1d}, {op2d})";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -217,9 +225,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"max({op1d}, {op2d})";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -228,8 +236,8 @@ namespace ShaderLabConvert
         {
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
             string operation = $"sqrt({op1d})";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -238,8 +246,8 @@ namespace ShaderLabConvert
         {
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
             string operation = $"rsqrt({op1d})";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -248,8 +256,8 @@ namespace ShaderLabConvert
         {
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
             string operation = $"log({op1d})";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -258,9 +266,29 @@ namespace ShaderLabConvert
         {
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
             string operation = $"exp({op1d})";
+            AddLine(sb, $"{op0d} = {operation};");
+        }
+
+        private void HandleRcp(SHDRInstruction inst)
+        {
+            SHDRInstructionOperand op0 = inst.operands[0];
+            SHDRInstructionOperand op1 = inst.operands[1];
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string operation = $"rcp({op1d})";
+            AddLine(sb, $"{op0d} = {operation};");
+        }
+
+        private void HandleFrc(SHDRInstruction inst)
+        {
+            SHDRInstructionOperand op0 = inst.operands[0];
+            SHDRInstructionOperand op1 = inst.operands[1];
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string operation = $"frac({op1d})";
             AddLine(sb, $"{op0d} = {operation};");
         }
 
@@ -269,9 +297,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"{op1d} << {op2d}";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -281,9 +309,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"{op1d} >> {op2d}";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -294,9 +322,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
             int[] mask = new int[] { 0, 1 };
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, mask, out _, out _);
-            string op2d = GetOperandDisplayString(op2, mask, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, mask, out _);
+            string op2d = GetOperandDisplayString(op2, mask, out _);
             string operation = WrapSaturated(inst, $"dot({op1d}, {op2d})");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -307,9 +335,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
             int[] mask = new int[] { 0, 1, 2 };
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, mask, out _, out _);
-            string op2d = GetOperandDisplayString(op2, mask, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, mask, out _);
+            string op2d = GetOperandDisplayString(op2, mask, out _);
             string operation = WrapSaturated(inst, $"dot({op1d}, {op2d})");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -320,9 +348,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
             int[] mask = new int[] { 0, 1, 2, 3 };
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, mask, out _, out _);
-            string op2d = GetOperandDisplayString(op2, mask, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, mask, out _);
+            string op2d = GetOperandDisplayString(op2, mask, out _);
             string operation = WrapSaturated(inst, $"dot({op1d}, {op2d})");
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -333,15 +361,15 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
             int[] uvMask = new int[] { 0, 1 };
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, uvMask, out string op1b, out _);
-            string op2d = GetOperandDisplayString(op2, out string op2b, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, uvMask, out BodyMaskPair op1bm);
+            string op2d = GetOperandDisplayString(op2, out BodyMaskPair op2bm);
 
             string operation;
-            if (op2b == "unity_ProbeVolumeSH")
-                operation = $"UNITY_SAMPLE_TEX3D_SAMPLER({op2b}, {op2b}, {op1b})";
+            if (op2bm.body == "unity_ProbeVolumeSH")
+                operation = $"UNITY_SAMPLE_TEX3D_SAMPLER({op2bm.body}, {op2bm.body}, {op1bm.body})";
             else
-                operation = $"tex2D({op2b}, {op1d})";
+                operation = $"tex2D({op2bm.body}, {op1d})";
 
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -353,21 +381,21 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op2 = inst.operands[2];
             SHDRInstructionOperand op3 = inst.operands[3];
             SHDRInstructionOperand op4 = inst.operands[4];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, out string op1b, out _);
-            string op2d = GetOperandDisplayString(op2, out string op2b, out _);
-            string op3d = GetOperandDisplayString(op3, out string op3b, out _);
-            string op4d = GetOperandDisplayString(op4, out string op4b, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, out BodyMaskPair op1bm);
+            string op2d = GetOperandDisplayString(op2, out BodyMaskPair op2bm);
+            string op3d = GetOperandDisplayString(op3, out _);
+            string op4d = GetOperandDisplayString(op4, out BodyMaskPair op4bm);
 
             string operation;
-            if (op2b == "unity_SpecCube0" || op2b == "unity_SpecCube1")
-                operation = $"UNITY_SAMPLE_TEXCUBE_LOD({op2b}, {op1b}, {op4b})";
+            if (op2bm.body == "unity_SpecCube0" || op2bm.body == "unity_SpecCube1")
+                operation = $"UNITY_SAMPLE_TEXCUBE_LOD({op2bm.body}, {op1bm.body}, {op4bm.body})";
             else
-                operation = $"tex3D({op2b}, {op1b})";
+                operation = $"tex3D({op2bm.body}, {op1bm.body})";
 
             AddLine(sb, $"{op0d} = {operation};");
 
-            if (op2b == "unity_SpecCube1" && !_unitySpecCube1DefinedYet)
+            if (op2bm.body == "unity_SpecCube1" && !_unitySpecCube1DefinedYet)
             {
                 // Terrible hack since the UNITY_SAMPLE_TEXCUBE macro requires samplerunity_SpecCube1 to exist
                 // normally it's passed in as samplerunity_SpecCube0 with UNITY_PASS_TEXCUBE but SAMPLE_TEXCUBE
@@ -377,11 +405,23 @@ namespace ShaderLabConvert
             }
         }
 
+        private void HandleDiscard(SHDRInstruction inst)
+        {
+            int testType = (inst.instData & 0x40000) >> 18;
+            SHDRInstructionOperand op0 = inst.operands[0];
+            string op0d = GetOperandDisplayString(op0, out _);
+
+            if (testType == 0)
+                AddLine(sb, $"if (!{op0d}) discard;");
+            else if (testType == 1)
+                AddLine(sb, $"if ({op0d}) discard;");
+        }
+
         private void HandleIf(SHDRInstruction inst)
         {
             int testType = (inst.instData & 0x40000) >> 18;
             SHDRInstructionOperand op0 = inst.operands[0];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
 
             if (testType == 0)
                 AddLine(sb, $"if (!{op0d})");
@@ -412,9 +452,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"{op1d} == {op2d}";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -424,9 +464,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"{op1d} != {op2d}";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -436,9 +476,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"{op1d} < {op2d}";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -448,9 +488,9 @@ namespace ShaderLabConvert
             SHDRInstructionOperand op0 = inst.operands[0];
             SHDRInstructionOperand op1 = inst.operands[1];
             SHDRInstructionOperand op2 = inst.operands[2];
-            string op0d = GetOperandDisplayString(op0, out _, out _);
-            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _, out _);
-            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _, out _);
+            string op0d = GetOperandDisplayString(op0, out _);
+            string op1d = GetOperandDisplayString(op1, op0.swizzle, out _);
+            string op2d = GetOperandDisplayString(op2, op0.swizzle, out _);
             string operation = $"{op1d} >= {op2d}";
             AddLine(sb, $"{op0d} = {operation};");
         }
@@ -467,25 +507,38 @@ namespace ShaderLabConvert
                 AddLine(lsb, _initIndent, $"fixed4 temp{i};");
         }
 
-        private string GetOperandDisplayString(SHDRInstructionOperand operand, out string body, out int[] mask)
+        private string GetOperandDisplayString(SHDRInstructionOperand operand, out BodyMaskPair bodyMaskPair)
         {
-            return GetOperandDisplayString(operand, null, out body, out mask);
+            return GetOperandDisplayString(operand, null, out bodyMaskPair);
         }
 
-        private string GetOperandDisplayString(SHDRInstructionOperand operand, int[] target, out string body, out int[] mask)
+        private string GetOperandDisplayString(SHDRInstructionOperand operand, int[] target, out BodyMaskPair bodyMaskPair)
+        {
+            List<BodyMaskPair> bodyMaskPairs;
+            string displayStr = GetOperandDisplayStrings(operand, target, out bodyMaskPairs)[0];
+            bodyMaskPair = bodyMaskPairs[0];
+            return displayStr;
+        }
+
+        private List<string> GetOperandDisplayStrings(SHDRInstructionOperand operand, out List<BodyMaskPair> bodyMaskPairs)
+        {
+            return GetOperandDisplayStrings(operand, null, out bodyMaskPairs);
+        }
+
+        private List<string> GetOperandDisplayStrings(SHDRInstructionOperand operand, int[] target, out List<BodyMaskPair> bodyMaskPairs)
         {
             int[] croppedMask = operand.swizzle;
-            if (croppedMask != null)
+            if (croppedMask == null || croppedMask.Length == 0)
             {
-                if (croppedMask.Length == 0)
-                {
-                    croppedMask = new int[] { 0, 1, 2, 3 };
-                }
-                if (target != null)
-                {
-                    croppedMask = MatchMaskToTarget(croppedMask, target);
-                }
+                croppedMask = new int[] { 0, 1, 2, 3 };
             }
+            if (target != null)
+            {
+                croppedMask = MatchMaskToTarget(croppedMask, target);
+            }
+
+            bodyMaskPairs = new List<BodyMaskPair>();
+
             switch (operand.operand)
             {
                 case Operand.ConstantBuffer:
@@ -550,14 +603,13 @@ namespace ShaderLabConvert
                             string maskStr = MaskToString(matchedMask);
                             paramStrs.Add($"{paramName}.{maskStr}");
                         }
-                        body = $"fixed{cbParams.Count}({string.Join(',', paramStrs)})";
-                        mask = null;
+                        bodyMaskPairs.Add(new BodyMaskPair($"fixed{cbParams.Count}({string.Join(',', paramStrs)})", null));
                         break;
                     }
                     else if (cbParams.Count == 1)
                     {
                         ShaderConstantBufferParam param = cbParams.First();
-                        body = param.name;
+                        string body = param.name;
 
                         // Matrix
                         if (param.isMatrix > 0)
@@ -565,11 +617,11 @@ namespace ShaderLabConvert
                             int matrixIdx = cbArrIdx - param.pos / 16;
                             body = $"_flip_{body}_{matrixIdx}";
                         }
-                        mask = MatchMaskToConstantBuffer(croppedMask, param.pos, param.rowCount);
+                        int[] matchedMask = MatchMaskToConstantBuffer(croppedMask, param.pos, param.rowCount);
+                        bodyMaskPairs.Add(new BodyMaskPair(body, matchedMask));
                         break;
                     }
-                    body = $"cb{cbSlotIdx}[{cbArrIdx}]";
-                    mask = croppedMask;
+                    bodyMaskPairs.Add(new BodyMaskPair($"cb{cbSlotIdx}[{cbArrIdx}]", croppedMask));
                     break;
                 }
                 case Operand.Input:
@@ -580,16 +632,17 @@ namespace ShaderLabConvert
                         o => o.register == operand.arraySizes[0] && ((searchMask & o.mask) == searchMask)
                     );
 
+                    // TODO
+                    int[] matchedMask = MatchMaskToInputOutput(croppedMask, input.mask, true);
+
                     if (IsVertex)
                     {
-                        body = $"v.{GetISGNInputName(input)}";
-                        mask = croppedMask;
+                        bodyMaskPairs.Add(new BodyMaskPair($"v.{GetISGNInputName(input)}", matchedMask));
                         break;
                     }
                     else
                     {
-                        body = $"i.{GetISGNInputName(input)}";
-                        mask = croppedMask;
+                        bodyMaskPairs.Add(new BodyMaskPair($"i.{GetISGNInputName(input)}", matchedMask));
                         break;
                     }
                 }
@@ -597,29 +650,33 @@ namespace ShaderLabConvert
                 {
                     if (IsVertex)
                     {
-                        // Search by first swizzle letter
-                        int searchMask = (croppedMask.Length != 0) ? (1 << croppedMask[0]) : 0;
-                        OSGN.Output output = _dxShader.Osgn.outputs.First(
-                            o => o.register == operand.arraySizes[0] && ((searchMask & o.mask) == searchMask)
-                        );
+                        int searchMask = 0;
+                        for (int i = 0; i < croppedMask.Length; i++)
+                            searchMask |= 1 << croppedMask[i];
 
-                        int[] matchedMask = MatchMaskToOutput(croppedMask, output);
+                        List<OSGN.Output> outputs = _dxShader.Osgn.outputs.Where(
+                            o => o.register == operand.arraySizes[0] && ((searchMask & o.mask) != 0)
+                        ).ToList();
 
-                        body = $"o.{GetOSGNOutputName(output)}";
-                        mask = matchedMask;
+                        foreach (OSGN.Output output in outputs)
+                        {
+                            int[] matchedMask = MatchMaskToInputOutput(croppedMask, output.mask, true);
+                            int[] realMatchedMask = MatchMaskToInputOutput(croppedMask, output.mask, false);
+                            bodyMaskPairs.Add(new BodyMaskPair($"o.{GetOSGNOutputName(output)}", matchedMask, realMatchedMask));
+                        }
                         break;
                     }
                     else
                     {
                         // Sometimes we have multiple outputs and I have
                         // no idea how unity figures out which are which
-                        body = $"output{operand.arraySizes[0]}";
-                        mask = croppedMask;
+                        bodyMaskPairs.Add(new BodyMaskPair($"output{operand.arraySizes[0]}", croppedMask));
                         break;
                     }
                 }
                 case Operand.Immediate32:
                 {
+                    string body;
                     if (operand.immValues.Length == 1)
                         body = $"{FormatFloat((float)operand.immValues[0])}";
                     else if (operand.immValues.Length == 4)
@@ -627,17 +684,18 @@ namespace ShaderLabConvert
                     else
                         body = $"()"; // ?
 
-                    mask = croppedMask;
+                    bodyMaskPairs.Add(new BodyMaskPair(body, null));
                     break;
                 }
                 case Operand.Temp:
                 {
+                    string body;
                     if (operand.arraySizes.Length > 0)
                         body = $"temp{operand.arraySizes[0]}";
                     else
                         body = $"temp0";
 
-                    mask = croppedMask;
+                    bodyMaskPairs.Add(new BodyMaskPair(body, croppedMask));
                     break;
                 }
                 case Operand.Resource:
@@ -646,8 +704,7 @@ namespace ShaderLabConvert
                         s => s.type == 0 && s.slotIdx == operand.arraySizes[0]
                     );
 
-                    body = texSlot.name;
-                    mask = croppedMask;
+                    bodyMaskPairs.Add(new BodyMaskPair(texSlot.name, croppedMask));
                     break;
                 }
                 case Operand.Sampler:
@@ -656,26 +713,32 @@ namespace ShaderLabConvert
                         s => s.type == 0 && s.args[0] == operand.arraySizes[0]
                     );
 
-                    body = sampSlot.name;
-                    mask = croppedMask;
+                    bodyMaskPairs.Add(new BodyMaskPair(sampSlot.name, croppedMask));
                     break;
                 }
                 default:
-                    body = $"undefined_{operand.operand}";
-                    mask = croppedMask;
+                    bodyMaskPairs.Add(new BodyMaskPair($"undefined_{operand.operand}", croppedMask));
                     break;
             }
 
-            string displayStr = mask != null ? $"{body}.{MaskToString(mask)}" : body;
-            if (((operand.extendedData & 0x80) >> 7) == 1)
+            // TODO: Move this to BMP ToString()
+            List<string> displayStrs = new List<string>();
+            foreach (BodyMaskPair pair in bodyMaskPairs)
             {
-                displayStr = $"abs({displayStr})";
+                string body = pair.body;
+                int[] mask = pair.mask;
+                string displayStr = mask != null ? $"{body}.{MaskToString(mask)}" : body;
+                if (((operand.extendedData & 0x80) >> 7) == 1)
+                {
+                    displayStr = $"abs({displayStr})";
+                }
+                if (((operand.extendedData & 0x40) >> 6) == 1)
+                {
+                    displayStr = $"-{displayStr}";
+                }
+                displayStrs.Add(displayStr);
             }
-            if (((operand.extendedData & 0x40) >> 6) == 1)
-            {
-                displayStr = $"-{displayStr}";
-            }
-            return displayStr;
+            return displayStrs;
         }
 
         private string GetISGNInputName(ISGN.Input input)
@@ -754,7 +817,7 @@ namespace ShaderLabConvert
 
         private int[] MatchMaskToConstantBuffer(int[] mask, int pos, int size)
         {
-            // Mask is aligned (x, xy, xyz, xyz)
+            // Mask is aligned (x, xy, xyz, xyzw)
             if (pos % 16 == 0)
             {
                 return mask;
@@ -770,12 +833,12 @@ namespace ShaderLabConvert
             return result.ToArray();
         }
 
-        private int[] MatchMaskToOutput(int[] mask, OSGN.Output output)
+        private int[] MatchMaskToInputOutput(int[] mask, int maskTest, bool moveSwizzles)
         {
             // Move swizzles (for example, .zw -> .xy) based on first letter
-            int maskTest = output.mask;
             int moveCount = 0;
-            for (int i = 0; i < 4; i++)
+            int i;
+            for (i = 0; i < 4; i++)
             {
                 if ((maskTest & 1) == 1)
                     break;
@@ -783,12 +846,28 @@ namespace ShaderLabConvert
                 maskTest >>= 1;
             }
 
-            int[] result = new int[mask.Length];
-            for (int i = 0; i < mask.Length; i++)
+            // Count remaining 1 bits
+            int bitCount = 0;
+            for (; i < 4; i++)
             {
-                result[i] = mask[i] - moveCount;
+                if ((maskTest & 1) == 0)
+                    break;
+                bitCount++;
+                maskTest >>= 1;
             }
-            return result;
+
+            List<int> result = new List<int>();
+            for (int j = 0; j < mask.Length; j++)
+            {
+                if (mask[j] >= moveCount && mask[j] < bitCount + moveCount)
+                {
+                    if (moveSwizzles)
+                        result.Add(mask[j] - moveCount);
+                    else
+                        result.Add(mask[j]);
+                }
+            }
+            return result.ToArray();
         }
 
         private string MaskToString(int[] mask)
@@ -834,6 +913,25 @@ namespace ShaderLabConvert
         {
             sb.Append(new string(' ', indent * 4));
             sb.AppendLine(text);
+        }
+
+        public class BodyMaskPair
+        {
+            public string body;
+            public int[] mask;
+            public int[] realMask;
+            public BodyMaskPair(string body, int[] mask)
+            {
+                this.body = body;
+                this.mask = mask;
+                this.realMask = mask;
+            }
+            public BodyMaskPair(string body, int[] mask, int[] realMask)
+            {
+                this.body = body;
+                this.mask = mask;
+                this.realMask = realMask;
+            }
         }
     }
 }
